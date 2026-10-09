@@ -25,6 +25,7 @@
           cudaPackages.cudatoolkit
           (writeShellScriptBin "clean" ''
             rm build -rf
+            rm compile_commands.json
           '')
           (writeShellScriptBin "configure" ''
             mkdir -p build
