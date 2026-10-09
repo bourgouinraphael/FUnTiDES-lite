@@ -23,6 +23,18 @@
           gdb
           valgrind
           cudaPackages.cudatoolkit
+          (writeShellScriptBin "clean" ''
+            rm build -rf
+          '')
+          (writeShellScriptBin "configure" ''
+            mkdir -p build
+            cd build
+            cmake .. -DENABLE_CUDA=ON -DUSE_KOKKOS=ON -DUSE_VECTOR=OFF -DKokkos_ARCH_ADA89=ON
+            cd ..
+          '')
+          (writeShellScriptBin "build" ''
+            make -C ./build -j
+          '')
         ];
         shellHook = ''
           export LD_LIBRARY_PATH="/run/opengl-driver/lib:$LD_LIBRARY_PATH"
