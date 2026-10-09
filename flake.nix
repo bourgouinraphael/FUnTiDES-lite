@@ -31,6 +31,7 @@
             cd build
             cmake .. -DENABLE_CUDA=ON -DUSE_KOKKOS=ON -DUSE_VECTOR=OFF -DKokkos_ARCH_ADA89=ON
             cd ..
+            ln -s build/compile_commands.json .
           '')
           (writeShellScriptBin "build" ''
             make -C ./build -j
