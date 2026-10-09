@@ -23,6 +23,7 @@
           gdb
           valgrind
           cudaPackages.cudatoolkit
+          llvmPackages.openmp
           (writeShellScriptBin "clean" ''
             rm build -rf
             rm compile_commands.json
@@ -40,6 +41,25 @@
         ];
         shellHook = ''
           export LD_LIBRARY_PATH="/run/opengl-driver/lib:$LD_LIBRARY_PATH"
+          export CUDA_PATH=${pkgs.cudaPackages.cudatoolkit}
+
+          cat > .clangd <<EOF
+          CompileFlags:
+            Add:
+              - -xcuda
+              - --cuda-gpu-arch=sm_89
+              - --cuda-path=${pkgs.cudaPackages.cudatoolkit}
+              - -Wno-unknown-cuda-version
+            Remove:
+              - -forward-unknown-to-host-compiler
+              - -Xcudafe*
+              - -Xcompiler*
+              - --expt-*
+              - --generate-code*
+              - -arch=*
+              - -gencode*
+              - -extended-lambda
+          EOF
         '';
       };
     };
