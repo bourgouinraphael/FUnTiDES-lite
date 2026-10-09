@@ -34,7 +34,7 @@
             cd ..
             ln -s build/compile_commands.json .
           '')
-          (writeShellScriptBin "build" ''
+          (writeShellScriptBin "compile" ''
             make -C ./build -j
           '')
         ];
