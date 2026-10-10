@@ -136,6 +136,11 @@ class SEMsolverAcoustic : public SEMSolverBase
   void outputSolutionValues(const int &indexTimeStep, int &i1,
                             int &myElementSource, const ARRAY_REAL_VIEW &field,
                             const char *fieldName) override;
+
+  void saveSnapshot(const int &indexTimeStep, int &i1, 
+                    const ARRAY_REAL_VIEW &fieldGlobal,
+                    const std::string& snapshotFolder);
+  
   /**
    * @brief Apply external forcing to the global displacement field.
    *

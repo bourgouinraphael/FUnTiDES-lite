@@ -76,6 +76,11 @@ class SEMSolverBase : public SolverBase
                                     int &myElementSource,
                                     const ARRAY_REAL_VIEW &field,
                                     const char *fieldName) = 0;
+
+  virtual void saveSnapshot(const int &indexTimeStep,
+                            int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const std::string& snapshotFolder) = 0; 
 };
 
 #endif  // SEM_SOLVERBASE_HPP_

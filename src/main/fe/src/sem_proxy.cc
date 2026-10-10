@@ -51,6 +51,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   cout << boolalpha;
   bool isElastic = isElastic_;
 
+  is_snapshots_ = opt.saveSnapshot;
+  snap_time_interval_ = opt.snapshotInterval;
+  snap_folder_ = opt.snapshotFolder;
+
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
   const SolverFactory::meshType meshType = getMesh(opt.mesh);
@@ -138,6 +142,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
 
+  std::cout << "Snapshots are " << (is_snapshots_ ? "enabled" : "disbled") << std::endl;
+  std::cout << "Snapshots are generated each " << snap_time_interval_ << "frame(s)" << std::endl;
+  std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
 }
 
 void SEMproxy::run()
@@ -183,6 +190,9 @@ void SEMproxy::run()
     }
 
     pnAtReceiver(0, indexTimeSample) = varnp1;
+
+    if (is_snapshots_ && snap_time_interval_ > 0 && indexTimeSample % snap_time_interval_ == 0)
+      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
 
     swap(i1, i2);
 
