@@ -38,6 +38,14 @@
           (writeShellScriptBin "compile" ''
             make -C ./build -j
           '')
+
+          # Python libs for visualisation
+          zuban
+          python3Packages.python
+          python3Packages.venvShellHook
+          python3Packages.numpy
+          python3Packages.pandas
+          python3Packages.matplotlib
         ];
         shellHook = ''
           export LD_LIBRARY_PATH="/run/opengl-driver/lib:$LD_LIBRARY_PATH"
@@ -61,6 +69,7 @@
               - -extended-lambda
           EOF
         '';
+        venvDir = "./venv";
       };
     };
 }
