@@ -31,6 +31,10 @@ class SemProxyOptions
   unsigned snapshotInterval = 1;
   std::string snapshotFolder = ".";
 
+  std::string sismosPosPath = "";
+  std::string sismosOutputFolder = "";
+  unsigned sismosInterval = 1;
+
   void validate() const
   {
     if (order < 1) throw std::runtime_error("order must be >= 1");
@@ -40,6 +44,7 @@ class SemProxyOptions
       throw std::runtime_error("lx/ly/lz must be > 0");
   }
 
+  // clang-format off
   // Bind CLI flags to this instance (no --help here)
   static void bind_cli(cxxopts::Options& opts, SemProxyOptions& o)
   {
@@ -64,6 +69,11 @@ class SemProxyOptions
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
         ("save-snapshot", "Enable snapshots (for each frame by default)", cxxopts::value<bool>(o.saveSnapshot))
         ("snapshot-interval", "Specify the snapshots frames interval", cxxopts::value<unsigned>(o.snapshotInterval))
-        ("snapshot-folder", "Folder for snapshot CSV files", cxxopts::value<std::string>(o.snapshotFolder));
+        ("snapshot-folder", "Folder for snapshot CSV files", cxxopts::value<std::string>(o.snapshotFolder))
+        ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
+        ("sismos-save-folder", "Specify the folder in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputFolder))
+        ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<unsigned>(o.sismosInterval))
+        ;
   }
+  // clang-format on
 };
