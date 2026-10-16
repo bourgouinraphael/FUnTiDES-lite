@@ -45,6 +45,7 @@
           python3Packages.venvShellHook
           python3Packages.numpy
           python3Packages.pandas
+          python3Packages.matplotlib
           python3Packages.pyvista
           python3Packages.imageio
         ];
