@@ -45,4 +45,7 @@ for f in files:
 
 for k, v in measurements.items():
     plt.plot(v[1], v[0], label=k)
+plt.legend()
+plt.xlabel("time (frames)")
+plt.ylabel("pressure")
 plt.savefig("sismos.png")
