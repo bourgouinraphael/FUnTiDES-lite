@@ -276,6 +276,7 @@ void SEMproxy::init_sismos()
     std::stringstream line_stream(line_buffer);
     std::string entry;
     std::array<float, 3> row;
+    int node = -1;
 
     for (int i = 0; i < 3; i++)
     {
@@ -285,7 +286,23 @@ void SEMproxy::init_sismos()
       }
       row[i] = std::stod(entry);
     }
+
+    for (int nodeIdx = 0; nodeIdx < m_mesh->getNumberOfNodes(); nodeIdx++)
+    {
+      if (m_mesh->nodeCoord(nodeIdx, 0) == row[0] &&
+          m_mesh->nodeCoord(nodeIdx, 1) == row[1] &&
+          m_mesh->nodeCoord(nodeIdx, 2) == row[2])
+      {
+          node = nodeIdx;
+          break;
+      }
+    }
     sismosPositions.push_back(row);
+    sismosNodeIdx.push_back(node);
+
+    if (node == -1){
+        std::cerr << "Node " << row[0] << ',' << row[1] << ',' << row[2] << " ignored as it doesn't correspond to a node (interpolation is not implemented)\n";
+    }
   }
 }
 
@@ -299,21 +316,19 @@ void SEMproxy::save_sismos()
                              sismos_output_path_);
 
   output << "node_id,x,y,z,pressure" << std::endl;
-  for (int nodeIdx = 0; nodeIdx < m_mesh->getNumberOfNodes(); nodeIdx++)
+  for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++)
   {
-    for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++)
-    {
-      const auto& sismoPos = sismosPositions[posIdx];
-      if (m_mesh->nodeCoord(nodeIdx, 0) == sismoPos[0] &&
-          m_mesh->nodeCoord(nodeIdx, 1) == sismoPos[1] &&
-          m_mesh->nodeCoord(nodeIdx, 2) == sismoPos[2])
-      {
-        auto pressure = pnGlobal(nodeIdx, i1);
-
-        output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
-               << sismoPos[2] << ',' << pressure << std::endl;
+      // If the nodeidx doesn't correspond to any nodeIdx, ignore it
+      int nodeIdx = sismosNodeIdx[posIdx];
+      if (nodeIdx == -1){
+          continue;
       }
-    }
+
+      const auto& sismoPos = sismosPositions[posIdx];
+
+      auto pressure = pnGlobal(nodeIdx, i1);
+      output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
+          << sismoPos[2] << ',' << pressure << std::endl;
   }
 }
 
