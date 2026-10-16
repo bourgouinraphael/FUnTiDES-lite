@@ -95,6 +95,7 @@ class SEMproxy
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
   int sismos_time_interval_;
+  float histogram_interval_;
 
   // physics
   bool isElastic_;
@@ -142,6 +143,46 @@ class SEMproxy
   SolverFactory::implemType getImplem(string implemArg);
   SolverFactory::methodType getMethod(string methodArg);
   SolverFactory::meshType getMesh(string meshArg);
+};
+
+struct histogram {
+  std::vector<int> array;
+  int min;
+  int max;
+  int interval;
+  
+  void add(double value)
+  {
+    int pos;
+    if (value > max)
+      {
+        for(int i = max; i < value; i+= interval)
+        {
+          array.push_back(0);
+        }
+        max = value;
+        array.push_back(value);
+      }
+    else if(value < min)
+    {
+      for(int i  = min; i > value; i -= interval)
+      {
+        array.insert(array.cbegin(), 0);
+      }
+      min = value;
+      array.insert(array.cbegin(), value);
+    }
+    else
+    {
+      pos = (value + abs(min)) / interval; 
+      array.at(pos) += 1;
+    }
+  }
+
+  std::string to_string()
+  {
+    return std::cout << min << ', ' << max << ', ' << array << '\n';
+  }
 };
 
 #endif /* SEMPROXY_HPP_ */

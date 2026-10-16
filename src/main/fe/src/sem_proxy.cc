@@ -57,6 +57,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   sismos_positions_path_ = opt.sismosPosPath;
   sismos_output_folder_ = opt.sismosOutputFolder;
   sismos_time_interval_ = opt.sismosInterval;
+  histogram_interval_ = opt.histogramInterval;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -215,6 +216,10 @@ void SEMproxy::run()
     if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
         save_sismos(indexTimeSample);
 
+    if(histogram != 0)
+        register_histogram(i1)
+
+
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -333,6 +338,15 @@ void SEMproxy::save_sismos(const int &indexTimeStep)
       auto pressure = pnGlobal(nodeIdx, i1);
       output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
           << sismoPos[2] << ',' << pressure << std::endl;
+  }
+}
+
+void SEMproxy::register_histogram()
+{
+
+  for(int i = 0; i < m_mesh->getNumberOfNodes(); i++)
+  {
+
   }
 }
 
