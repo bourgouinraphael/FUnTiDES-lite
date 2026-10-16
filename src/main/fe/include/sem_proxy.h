@@ -93,7 +93,7 @@ class SEMproxy
   int snap_time_interval_;
   std::string snap_folder_;
   std::string sismos_positions_path_;
-  std::string sismos_output_path_;
+  std::string sismos_output_folder_;
 
   // physics
   bool isElastic_;
@@ -133,7 +133,7 @@ class SEMproxy
   void init_sismos();
 
   // save the sismos data in a csv file
-  void save_sismos();
+  void save_sismos(const int &indexTimeStep);
 
   // private methods to pars argv options
   int getPhysic(string physicArg);

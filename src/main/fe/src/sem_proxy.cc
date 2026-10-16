@@ -55,7 +55,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   snap_time_interval_ = opt.snapshotInterval;
   snap_folder_ = opt.snapshotFolder;
   sismos_positions_path_ = opt.sismosPosPath;
-  sismos_output_path_ = opt.sismosOutputPath;
+  sismos_output_folder_ = opt.sismosOutputFolder;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -158,9 +158,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   {
     std::cout << "No sismos position loaded" << std::endl;
   }
-  if (!sismos_output_path_.empty())
+  if (!sismos_output_folder_.empty())
   {
-    std::cout << "Sismos output path: " << sismos_output_path_ << std::endl;
+    std::cout << "Sismos output folder: " << sismos_output_folder_ << std::endl;
   }
 }
 
@@ -211,6 +211,8 @@ void SEMproxy::run()
     if (is_snapshots_ && snap_time_interval_ > 0 && indexTimeSample % snap_time_interval_ == 0)
       m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
 
+    if (!sismos_output_folder_.empty()) save_sismos(indexTimeSample);
+
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -219,8 +221,6 @@ void SEMproxy::run()
 
     totalOutputTime += system_clock::now() - startOutputTime;
   }
-
-  if (!sismos_output_path_.empty()) save_sismos();
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
                             .time_since_epoch()
@@ -308,12 +308,14 @@ void SEMproxy::init_sismos()
 
 // saves the sismos data in a csv file with "," as separator
 // columns: x,y,z,pressure
-void SEMproxy::save_sismos()
+void SEMproxy::save_sismos(const int &indexTimeStep)
 {
-  std::ofstream output(sismos_output_path_);
+  std::ostringstream output_filename;
+  output_filename << sismos_output_folder_ << "/sismos_" << std::setw(6) << std::setfill('0') << indexTimeStep << ".csv";
+  std::ofstream output(output_filename.str());
   if (!output)
     throw std::runtime_error("Unable to open sismos save file: " +
-                             sismos_output_path_);
+                             sismos_output_folder_);
 
   output << "node_id,x,y,z,pressure" << std::endl;
   for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++)

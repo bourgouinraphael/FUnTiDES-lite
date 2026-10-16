@@ -32,7 +32,7 @@ class SemProxyOptions
   std::string snapshotFolder = ".";
 
   std::string sismosPosPath = "";
-  std::string sismosOutputPath = "";
+  std::string sismosOutputFolder = "";
 
   void validate() const
   {
@@ -70,7 +70,7 @@ class SemProxyOptions
         ("snapshot-interval", "Specify the snapshots frames interval", cxxopts::value<unsigned>(o.snapshotInterval))
         ("snapshot-folder", "Folder for snapshot CSV files", cxxopts::value<std::string>(o.snapshotFolder))
         ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
-        ("sismos-save-file", "Specify the file in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputPath))
+        ("sismos-save-folder", "Specify the folder in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputFolder))
         ;
   }
   // clang-format on
