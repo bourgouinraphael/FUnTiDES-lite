@@ -43,10 +43,12 @@ for f in files:
             measurements[name][0].append(float(row["pressure"]))
             measurements[name][1].append(float(time))
 
+plt.figure(figsize=(12, 8))
+
 for k, v in measurements.items():
     sp = np.fft.fft(v[0])
     freq = np.fft.fftfreq(len(v[0]), args.sismos_interval)
-    plt.plot(freq, sp.real, label=k)
-    break
+    plt.plot(freq, sp.real, label=f"{k} real")
+    plt.plot(freq, sp.imag, label=f"{k} imag")
 plt.legend()
 plt.savefig("fft.png")
