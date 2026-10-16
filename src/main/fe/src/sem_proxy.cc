@@ -56,6 +56,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   snap_folder_ = opt.snapshotFolder;
   sismos_positions_path_ = opt.sismosPosPath;
   sismos_output_folder_ = opt.sismosOutputFolder;
+  sismos_time_interval_ = opt.sismosInterval;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -211,7 +212,8 @@ void SEMproxy::run()
     if (is_snapshots_ && snap_time_interval_ > 0 && indexTimeSample % snap_time_interval_ == 0)
       m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
 
-    if (!sismos_output_folder_.empty()) save_sismos(indexTimeSample);
+    if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
+        save_sismos(indexTimeSample);
 
     swap(i1, i2);
 

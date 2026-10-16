@@ -94,6 +94,7 @@ class SEMproxy
   std::string snap_folder_;
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
+  int sismos_time_interval_;
 
   // physics
   bool isElastic_;
