@@ -54,6 +54,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   is_snapshots_ = opt.saveSnapshot;
   snap_time_interval_ = opt.snapshotInterval;
   snap_folder_ = opt.snapshotFolder;
+  sismos_positions_path_ = opt.sismosPosPath;
+  sismos_output_folder_ = opt.sismosOutputFolder;
+  sismos_time_interval_ = opt.sismosInterval;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -128,6 +131,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
                           opt.taper_delta);
 
   initFiniteElem();
+  init_sismos();
 
   std::cout << "Number of node is " << m_mesh->getNumberOfNodes() << std::endl;
   std::cout << "Number of element is " << m_mesh->getNumberOfElements()
@@ -145,6 +149,20 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Snapshots are " << (is_snapshots_ ? "enabled" : "disbled") << std::endl;
   std::cout << "Snapshots are generated each " << snap_time_interval_ << "frame(s)" << std::endl;
   std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
+  if (!sismos_positions_path_.empty())
+  {
+    std::cout << "Loaded " << sismosPositions.size()
+              << " sismos positions from " << sismos_positions_path_
+              << std::endl;
+  }
+  else
+  {
+    std::cout << "No sismos position loaded" << std::endl;
+  }
+  if (!sismos_output_folder_.empty())
+  {
+    std::cout << "Sismos output folder: " << sismos_output_folder_ << std::endl;
+  }
 }
 
 void SEMproxy::run()
@@ -194,6 +212,9 @@ void SEMproxy::run()
     if (is_snapshots_ && snap_time_interval_ > 0 && indexTimeSample % snap_time_interval_ == 0)
       m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
 
+    if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
+        save_sismos(indexTimeSample);
+
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -233,6 +254,86 @@ void SEMproxy::init_arrays()
   rhsElementRcv = allocateVector<vectorInt>(1, "rhsElementRcv");
   rhsWeightsRcv = allocateArray2D<arrayReal>(
       1, m_mesh->getNumberOfPointsPerElement(), "RHSWeightRcv");
+}
+
+// load the sismos positions from a csv file with "," as separator
+// culumns: x, y, z (in this exact order).
+// the header can be anything, it will be ignored.
+void SEMproxy::init_sismos()
+{
+  if (sismos_positions_path_.empty()) return;
+
+  std::ifstream pos_input(sismos_positions_path_);
+
+  if (!pos_input)
+    throw std::runtime_error("Unable to open sismos position file: " +
+                             sismos_positions_path_);
+
+  std::string line_buffer;
+
+  std::getline(pos_input, line_buffer);  // Skip the header
+
+  while (std::getline(pos_input, line_buffer))
+  {
+    std::stringstream line_stream(line_buffer);
+    std::string entry;
+    std::array<float, 3> row;
+    int node = -1;
+
+    for (int i = 0; i < 3; i++)
+    {
+      if (!std::getline(line_stream, entry, ','))
+      {
+        throw std::runtime_error("Invalid sismos position file format");
+      }
+      row[i] = std::stod(entry);
+    }
+
+    for (int nodeIdx = 0; nodeIdx < m_mesh->getNumberOfNodes(); nodeIdx++)
+    {
+      if (m_mesh->nodeCoord(nodeIdx, 0) == row[0] &&
+          m_mesh->nodeCoord(nodeIdx, 1) == row[1] &&
+          m_mesh->nodeCoord(nodeIdx, 2) == row[2])
+      {
+          node = nodeIdx;
+          break;
+      }
+    }
+    sismosPositions.push_back(row);
+    sismosNodeIdx.push_back(node);
+
+    if (node == -1){
+        std::cerr << "Node " << row[0] << ',' << row[1] << ',' << row[2] << " ignored as it doesn't correspond to a node (interpolation is not implemented)\n";
+    }
+  }
+}
+
+// saves the sismos data in a csv file with "," as separator
+// columns: x,y,z,pressure
+void SEMproxy::save_sismos(const int &indexTimeStep)
+{
+  std::ostringstream output_filename;
+  output_filename << sismos_output_folder_ << "/sismos_" << std::setw(6) << std::setfill('0') << indexTimeStep << ".csv";
+  std::ofstream output(output_filename.str());
+  if (!output)
+    throw std::runtime_error("Unable to open sismos save file: " +
+                             sismos_output_folder_);
+
+  output << "node_id,x,y,z,pressure" << std::endl;
+  for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++)
+  {
+      // If the nodeidx doesn't correspond to any nodeIdx, ignore it
+      int nodeIdx = sismosNodeIdx[posIdx];
+      if (nodeIdx == -1){
+          continue;
+      }
+
+      const auto& sismoPos = sismosPositions[posIdx];
+
+      auto pressure = pnGlobal(nodeIdx, i1);
+      output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
+          << sismoPos[2] << ',' << pressure << std::endl;
+  }
 }
 
 // Initialize sources
