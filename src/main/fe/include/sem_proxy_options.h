@@ -35,7 +35,7 @@ class SemProxyOptions
   std::string sismosOutputFolder = "";
   unsigned sismosInterval = 1;
   
-  float histogramInterval = 0.2;
+  float histogramInterval = 0;
 
   void validate() const
   {

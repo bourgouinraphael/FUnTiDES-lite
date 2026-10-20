@@ -133,6 +133,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   initFiniteElem();
   init_sismos();
+  init_histogram();
 
   std::cout << "Number of node is " << m_mesh->getNumberOfNodes() << std::endl;
   std::cout << "Number of element is " << m_mesh->getNumberOfElements()
@@ -216,7 +217,7 @@ void SEMproxy::run()
     if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
         save_sismos(indexTimeSample);
 
-    if(histogram != 0)
+    if(histogram)
         register_histogram(i1)
 
 
@@ -341,12 +342,22 @@ void SEMproxy::save_sismos(const int &indexTimeStep)
   }
 }
 
+void SEMproxy::init_histogram()
+{
+  histogram histo = {
+    array,
+    std::numerics_limits<double>::max(), // setting min to +inf
+    std::numerics_limits<double>::min(), // setting max to -inf
+    histogram_interval_,
+  };
+}
+
 void SEMproxy::register_histogram()
 {
-
+  
   for(int i = 0; i < m_mesh->getNumberOfNodes(); i++)
   {
-
+    histo.add(pnGlobal(i, i1));
   }
 }
 

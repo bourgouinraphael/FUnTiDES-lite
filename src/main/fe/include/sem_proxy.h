@@ -147,8 +147,8 @@ class SEMproxy
 
 struct histogram {
   std::vector<int> array;
-  int min;
-  int max;
+  double min;
+  double max;
   int interval;
   
   void add(double value)
@@ -156,25 +156,25 @@ struct histogram {
     int pos;
     if (value > max)
       {
-        for(int i = max; i < value; i+= interval)
+        for(double i = max; i < value; i+= interval)
         {
           array.push_back(0);
         }
         max = value;
-        array.push_back(value);
+        array.push_back(1);
       }
     else if(value < min)
     {
-      for(int i  = min; i > value; i -= interval)
+      for(double i  = min; i > value; i -= interval)
       {
         array.insert(array.cbegin(), 0);
       }
       min = value;
-      array.insert(array.cbegin(), value);
+      array.insert(array.cbegin(), 1);
     }
     else
     {
-      pos = (value + abs(min)) / interval; 
+      pos = (min < 0) ? (value - min) / interval : value / interval;
       array.at(pos) += 1;
     }
   }
