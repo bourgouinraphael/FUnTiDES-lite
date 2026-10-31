@@ -141,6 +141,18 @@ class SEMsolverAcoustic : public SEMSolverBase
                     const ARRAY_REAL_VIEW &fieldGlobal,
                     const std::string& snapshotFolder);
   
+  virtual float computeMin(int &i1,
+                           const ARRAY_REAL_VIEW &field,
+                           const bool &parallel);
+
+  virtual float computeMax(int &i1,
+                           const ARRAY_REAL_VIEW &field,
+                           const bool &parallel);
+
+  virtual float computeMean(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel);
+  
   /**
    * @brief Apply external forcing to the global displacement field.
    *
