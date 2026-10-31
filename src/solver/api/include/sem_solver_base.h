@@ -80,7 +80,19 @@ class SEMSolverBase : public SolverBase
   virtual void saveSnapshot(const int &indexTimeStep,
                             int &i1,
                             const ARRAY_REAL_VIEW &field,
-                            const std::string& snapshotFolder) = 0; 
+                            const std::string& snapshotFolder) = 0;
+
+  virtual float computeMin(int &i1,
+                           const ARRAY_REAL_VIEW &field,
+                           const bool &parallel) = 0;
+
+  virtual float computeMax(int &i1,
+                           const ARRAY_REAL_VIEW &field,
+                           const bool &parallel) = 0;
+
+  virtual float computeMean(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel) = 0;
 };
 
 #endif  // SEM_SOLVERBASE_HPP_

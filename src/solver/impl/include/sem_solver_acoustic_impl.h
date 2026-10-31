@@ -233,6 +233,77 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     throw std::runtime_error("Error writing snapshot file: " + filename.str());
 }
 
+template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
+float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
+    computeMin(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, const bool &parallel)
+{
+  float min;
+  const int numberOfNodes = m_mesh.getNumberOfNodes();
+
+  if (parallel) {
+    Kokkos::parallel_reduce(numberOfNodes, KOKKOS_LAMBDA (const int& node, float& lmin) {
+      lmin = Kokkos::min(lmin, fieldGlobal(node, i1));
+    }, Kokkos::Min<float>(min));
+  }
+
+  else {
+    for (int node = 0; node < numberOfNodes; ++node) {
+      const auto pressure = fieldGlobal(node, i1);
+      if (node == 0 || pressure < min)
+        min = pressure;
+    }
+  }
+
+  return min;
+}
+
+template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
+float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
+    computeMax(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, const bool &parallel)
+{
+  float max;
+  const int numberOfNodes = m_mesh.getNumberOfNodes();
+
+  if (parallel) {
+    Kokkos::parallel_reduce(numberOfNodes, KOKKOS_LAMBDA (const int& node, float& lmax) {
+      lmax = Kokkos::max(lmax, fieldGlobal(node, i1));
+    }, Kokkos::Max<float>(max));
+  }
+
+  else {
+    for (int node = 0; node < numberOfNodes; ++node) {
+      const auto pressure = fieldGlobal(node, i1);
+      if (node == 0 || pressure > max)
+        max = pressure;
+    }
+  }
+
+  return max;
+}
+
+template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
+float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
+    computeMean(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, const bool &parallel)
+{
+  float sum;
+  const int numberOfNodes = m_mesh.getNumberOfNodes();
+
+  if (parallel) {
+    Kokkos::parallel_reduce(numberOfNodes, KOKKOS_LAMBDA (const int& node, float& lsum) {
+      lsum += fieldGlobal(node, i1);
+    }, Kokkos::Sum<float>(sum));
+  }
+
+  else {
+    sum = 0;
+    for (int node = 0; node < numberOfNodes; ++node) {
+      sum += fieldGlobal(node, i1);;
+    }
+  }
+
+  return sum / m_mesh.getNumberOfNodes();
+}
+
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE,
           bool IS_MODEL_ON_NODES>
 void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE,

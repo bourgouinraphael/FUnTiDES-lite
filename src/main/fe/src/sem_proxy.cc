@@ -18,6 +18,13 @@
 #include <sstream>
 #include <variant>
 
+#include <iostream>
+#include <chrono>
+
+#include <algorithm>
+#include <random>
+#include <vector>
+
 using namespace SourceAndReceiverUtils;
 
 SEMproxy::SEMproxy(const SemProxyOptions& opt)
@@ -51,12 +58,18 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   cout << boolalpha;
   bool isElastic = isElastic_;
 
-  is_snapshots_ = opt.saveSnapshot;
-  snap_time_interval_ = opt.snapshotInterval;
+  snapshots_opt = {opt.saveSnapshot, opt.snapshotInterval};
   snap_folder_ = opt.snapshotFolder;
+
+  sismos_opt = {opt.saveSismos, opt.sismosInterval};
   sismos_positions_path_ = opt.sismosPosPath;
   sismos_output_folder_ = opt.sismosOutputFolder;
-  sismos_time_interval_ = opt.sismosInterval;
+  
+  min_opt = {opt.saveMin, opt.minInterval};
+  max_opt = {opt.saveMax, opt.maxInterval};
+  mean_opt = {opt.saveMean, opt.meanInterval};
+
+  parallel_ = opt.parallel;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -131,7 +144,6 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
                           opt.taper_delta);
 
   initFiniteElem();
-  init_sismos();
 
   std::cout << "Number of node is " << m_mesh->getNumberOfNodes() << std::endl;
   std::cout << "Number of element is " << m_mesh->getNumberOfElements()
@@ -146,22 +158,18 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
 
-  std::cout << "Snapshots are " << (is_snapshots_ ? "enabled" : "disbled") << std::endl;
-  std::cout << "Snapshots are generated each " << snap_time_interval_ << "frame(s)" << std::endl;
-  std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
-  if (!sismos_positions_path_.empty())
-  {
-    std::cout << "Loaded " << sismosPositions.size()
-              << " sismos positions from " << sismos_positions_path_
-              << std::endl;
+  std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disbled") << std::endl;
+  if (snapshots_opt.is_used) {
+    std::cout << "Snapshots are generated each " << snapshots_opt.interval << "frame(s)" << std::endl;
+    std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
   }
-  else
-  {
-    std::cout << "No sismos position loaded" << std::endl;
-  }
-  if (!sismos_output_folder_.empty())
-  {
-    std::cout << "Sismos output folder: " << sismos_output_folder_ << std::endl;
+  
+  std::cout << "Sismos are " << (sismos_opt.is_used ? "enabled" : "disbled") << std::endl;
+  if (sismos_opt.is_used) {
+    init_sismos();
+    std::cout << "Loaded " << sismosPositions.size() << " sismos positions from \"" << sismos_positions_path_ << "\"" << std::endl;
+    std::cout << "Sismos are generated each " << sismos_opt.interval << "frame(s)" << std::endl;
+    std::cout << "Sismos are saved in \"" << sismos_output_folder_ << "\"" << std::endl;
   }
 }
 
@@ -173,8 +181,21 @@ void SEMproxy::run()
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
 
-  for (int indexTimeSample = 0; indexTimeSample < num_sample_;
-       indexTimeSample++)
+  float min;
+  std::chrono::steady_clock::duration min_computation_time{};
+
+  float max;
+  std::chrono::steady_clock::duration max_computation_time{};
+
+  float mean = 0;
+  int mean_iter = 0;
+  std::chrono::steady_clock::duration mean_computation_time{};
+
+  std::vector<int> operationOrder = {0, 1, 2};
+  std::mt19937 rng(std::random_device{}());
+
+  ///////////////////////////////////////////////////////////////////////////////
+  for (int indexTimeSample = 0; indexTimeSample < num_sample_; indexTimeSample++)
   {
     startComputeTime = system_clock::now();
     m_solver->computeOneStep(dt_, indexTimeSample, solverData);
@@ -209,11 +230,43 @@ void SEMproxy::run()
 
     pnAtReceiver(0, indexTimeSample) = varnp1;
 
-    if (is_snapshots_ && snap_time_interval_ > 0 && indexTimeSample % snap_time_interval_ == 0)
+    if (snapshots_opt.test(indexTimeSample))
       m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
 
-    if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
-        save_sismos(indexTimeSample);
+    if (sismos_opt.test(indexTimeSample))
+      save_sismos(indexTimeSample);
+
+    std::shuffle(operationOrder.begin(), operationOrder.end(), rng);
+    for (int op : operationOrder) {
+      if (op == 0 && min_opt.test(indexTimeSample)) {
+        auto t0 = std::chrono::steady_clock::now();
+        float local_min = m_solver->computeMin(i1, pnGlobal, parallel_);
+        if (indexTimeSample == 0 || local_min < min)
+          min = local_min;
+        Kokkos::fence();
+        auto t1 = std::chrono::steady_clock::now();
+        min_computation_time += (t1 - t0);
+      }
+
+      else if (op == 1 && max_opt.test(indexTimeSample)) {
+        auto t0 = std::chrono::steady_clock::now();
+        float local_max = m_solver->computeMax(i1, pnGlobal, parallel_);
+        if (indexTimeSample == 0 || local_max > max)
+          max = local_max;
+        Kokkos::fence();
+        auto t1 = std::chrono::steady_clock::now();
+        max_computation_time += (t1 - t0);
+      }
+
+      else if (op == 2 && mean_opt.test(indexTimeSample)) {
+        auto t0 = std::chrono::steady_clock::now();
+        float local_mean = m_solver->computeMean(i1, pnGlobal, parallel_);
+        mean += (local_mean - mean) / (++mean_iter);
+        Kokkos::fence();
+        auto t1 = std::chrono::steady_clock::now();
+        mean_computation_time += (t1 - t0);
+      }
+    }
 
     swap(i1, i2);
 
@@ -222,6 +275,23 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
+  }
+  ///////////////////////////////////////////////////////////////////////////////
+
+  if (min_opt.is_used || max_opt.is_used || mean_opt.is_used) {
+    std::cout << "------------------------------------------------\n" << std::endl;
+    if (min_opt.is_used) {
+      std::cout << "Min: " << min << std::endl;
+      std::cout << "Min computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(min_computation_time).count() << "ms" << std::endl;
+    }
+    if (max_opt.is_used) {
+      std::cout << "Max: " << max << std::endl;
+      std::cout << "Max computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(max_computation_time).count() << "ms" << std::endl;
+    }
+    if (mean_opt.is_used) {
+      std::cout << "Mean: " << mean << std::endl;
+      std::cout << "Mean computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(mean_computation_time).count() << "ms" << std::endl;
+    }
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)

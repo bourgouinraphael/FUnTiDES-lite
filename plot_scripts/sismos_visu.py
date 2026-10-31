@@ -19,7 +19,7 @@ parser.add_argument("--run", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 
 if args.run:
-    args_passed_to_sem = args.sem_options + f" --sismos-pos-file {args.sismos_pos_file} --sismos-save-folder {args.sismos_folder} --sismos-save-interval {args.sismos_interval}"
+    args_passed_to_sem = args.sem_options + f" --save-sismos --sismos-pos-file {args.sismos_pos_file} --sismos-save-folder {args.sismos_folder} --sismos-save-interval {args.sismos_interval}"
 
     # If the folder dir doesn't exists, create it
     if not os.path.exists(args.sismos_folder):
@@ -28,7 +28,10 @@ if args.run:
     # run the simulation
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
-files = [e.path for e in os.scandir(args.sismos_folder)]
+files = sorted(
+    [e.path for e in os.scandir(args.sismos_folder) if e.is_file()],
+    key=lambda f: int(os.path.basename(f).split("_")[1].split(".")[0])
+)
 measurements = {}
 
 for f in files:
@@ -39,12 +42,12 @@ for f in files:
         if measurements.get(name, None) is None:
             measurements[name] = ([float(time)], [float(row["pressure"])])
         else:
-            measurements[name][0].append(float(row["pressure"]))
-            measurements[name][1].append(float(time))
+            measurements[name][0].append(float(time))
+            measurements[name][1].append(float(row["pressure"]))
 
 
 for k, v in measurements.items():
-    plt.plot(v[1], v[0], label=k)
+    plt.plot(v[0], v[1], label=k)
 plt.legend()
 plt.xlabel("time (frames)")
 plt.ylabel("pressure")
