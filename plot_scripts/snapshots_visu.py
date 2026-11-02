@@ -28,23 +28,23 @@ if args.run:
     # run the simulation
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
-files = [e.path for e in os.scandir(args.snapshot_folder)]
-vmax = max(pd.read_csv(f, usecols=["pressure"])["pressure"].max() for f in files)
-vmin = min(pd.read_csv(f, usecols=["pressure"])["pressure"].min() for f in files)
+vmax = pd.read_csv(args.snapshot_folder + "/snapshots.csv", usecols=["pressure"])["pressure"].max()
+vmin = pd.read_csv(args.snapshot_folder + "/snapshots.csv", usecols=["pressure"])["pressure"].min()
 vabs = max(abs(vmin), abs(vmax))
 
 plotter = pv.Plotter(off_screen=True)
 plotter.open_gif("animation.gif")
 plotter.show_axes()
-for f in files:
-    print(f"Processing file {f}")
-    df = pd.read_csv(f)
-    cloud = pv.PolyData(df[["x", "y", "z"]].to_numpy())
-    cloud["pressure"] = df["pressure"].to_numpy()
-    plotter.clear()
-    p = df["pressure"].to_numpy()
-    alpha = np.clip(np.abs(p) / vabs, 0, 1)
-    plotter.add_mesh(cloud, opacity=alpha, scalars="pressure", cmap="viridis", clim=[-vabs, vabs], point_size=3, render_points_as_spheres=True)
-    plotter.write_frame()
+
+#print(f"Processing file {f}")
+df = pd.read_csv(args.snapshot_folder + "/snapshots.csv")
+cloud = pv.PolyData(df[["x", "y", "z"]].to_numpy())
+cloud["pressure"] = df["pressure"].to_numpy()
+plotter.clear()
+p = df["pressure"].to_numpy()
+alpha = np.clip(np.abs(p) / vabs, 0, 1)
+plotter.add_mesh(cloud, opacity=alpha, scalars="pressure", cmap="viridis", clim=[-vabs, vabs], point_size=3, render_points_as_spheres=True)
+plotter.write_frame()
+
 plotter.close()
 

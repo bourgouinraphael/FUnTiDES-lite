@@ -34,7 +34,7 @@ class SemProxyOptions
   bool saveSismos = false;
   int sismosInterval = 1;
   std::string sismosOutputFolder = ".";
-  std::string sismosPosPath = "";
+  std::string sismosPosPath = "sismos_coords.csv";
   
   bool saveMin = false;
   int minInterval = 1;

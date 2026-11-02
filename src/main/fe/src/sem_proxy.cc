@@ -159,10 +159,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Time step is " << dt_ << "s" << std::endl;
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
 
-  std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disbled") << std::endl;
+  std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disabled") << std::endl;
   if (snapshots_opt.is_used) {
     std::ostringstream filename;
-    filename << snap_folder_ << "/snapshots" << ".csv";
+    filename << snap_folder_ << "/snapshots.csv";
     snap_folder_ = filename.str();
 
     snap_file_.open(snap_folder_);
@@ -173,7 +173,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
     std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
   }
   
-  std::cout << "Sismos are " << (sismos_opt.is_used ? "enabled" : "disbled") << std::endl;
+  std::cout << "Sismos are " << (sismos_opt.is_used ? "enabled" : "disabled") << std::endl;
   if (sismos_opt.is_used) {
     init_sismos();
     std::cout << "Loaded " << sismosPositions.size() << " sismos positions from \"" << sismos_positions_path_ << "\"" << std::endl;
@@ -300,6 +300,9 @@ void SEMproxy::run()
   if (snapshots_opt.is_used)
     snap_file_.close();
 
+  if (sismos_opt.is_used)
+    sismos_file_.close();
+
   if (min_opt.is_used || max_opt.is_used || mean_opt.is_used || variance_opt.is_used) {
     std::cout << "------------------------------------------------\n" << std::endl;
     if (min_opt.is_used) {
@@ -402,33 +405,35 @@ void SEMproxy::init_sismos()
         std::cerr << "Node " << row[0] << ',' << row[1] << ',' << row[2] << " ignored as it doesn't correspond to a node (interpolation is not implemented)\n";
     }
   }
+
+  std::ostringstream output_filename;
+  output_filename << sismos_output_folder_ << "/sismos.csv";
+  sismos_output_folder_ = output_filename.str();
+  
+  sismos_file_.open(sismos_output_folder_);
+  if (!sismos_file_)
+    throw std::runtime_error("Unable to open sismos save file: " + sismos_output_folder_);
 }
 
 // saves the sismos data in a csv file with "," as separator
 // columns: x,y,z,pressure
 void SEMproxy::save_sismos(const int &indexTimeStep)
 {
-  std::ostringstream output_filename;
-  output_filename << sismos_output_folder_ << "/sismos_" << std::setw(6) << std::setfill('0') << indexTimeStep << ".csv";
-  std::ofstream output(output_filename.str());
-  if (!output)
-    throw std::runtime_error("Unable to open sismos save file: " +
-                             sismos_output_folder_);
+  if (indexTimeStep == 0)
+    sismos_file_ << "iteration,node_id,x,y,z,pressure" << std::endl;
 
-  output << "node_id,x,y,z,pressure" << std::endl;
-  for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++)
-  {
+  for (int posIdx = 0; posIdx < sismosPositions.size(); posIdx++) {
       // If the nodeidx doesn't correspond to any nodeIdx, ignore it
       int nodeIdx = sismosNodeIdx[posIdx];
-      if (nodeIdx == -1){
+      if (nodeIdx == -1) {
           continue;
       }
 
       const auto& sismoPos = sismosPositions[posIdx];
 
       auto pressure = pnGlobal(nodeIdx, i1);
-      output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
-          << sismoPos[2] << ',' << pressure << std::endl;
+      sismos_file_ << indexTimeStep << ',' << nodeIdx << ',' << sismoPos[0] << ',' 
+          << sismoPos[1] << ',' << sismoPos[2] << ',' << pressure << std::endl;
   }
 }
 

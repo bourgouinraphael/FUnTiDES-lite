@@ -29,9 +29,7 @@ if args.run:
     # run the simulation
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
-files = [e.path for e in os.scandir(args.snapshot_folder)]
-
-pressure_values = [list(pd.read_csv(f)["pressure"]) for f in files]
+pressure_values = [list(pd.read_csv(args.snapshot_folder + "/snapshots.csv")["pressure"])]
 pressure_values_flattened = [x for l in pressure_values for x in l]
 
 pressure_max = max(pressure_values_flattened)
