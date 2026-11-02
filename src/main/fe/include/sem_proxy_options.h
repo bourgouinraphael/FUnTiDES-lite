@@ -28,16 +28,26 @@ class SemProxyOptions
   bool isElastic = false;
 
   bool saveSnapshot = false;
-  unsigned snapshotInterval = 1;
+  int snapshotInterval = 1;
   std::string snapshotFolder = ".";
-
+  
+  bool saveSismos = false;
+  int sismosInterval = 1;
+  std::string sismosOutputFolder = ".";
   std::string sismosPosPath = "";
-  std::string sismosOutputFolder = "";
-  unsigned sismosInterval = 1;
   
   bool saveHistogram = false;
   double histogramInterval = 0.2;
   std::string histogramFile = "histogram.csv";
+  
+  bool saveMin = false;
+  int minInterval = 1;
+  bool saveMax = false;
+  int maxInterval = 1;
+  bool saveMean = false;
+  int meanInterval = 1;
+
+  bool parallel = false;
 
   void validate() const
   {
@@ -71,16 +81,28 @@ class SemProxyOptions
         ("taper-delta", "Taper delta for sponge boundaries value", cxxopts::value<float>(o.taper_delta))
         ("is-model-on-nodes", "Boolean to tell if the model is charged on nodes (true) or on element (false)", cxxopts::value<bool>(o.isModelOnNodes))
         ("is-elastic", "Elastic simulation", cxxopts::value<bool>(o.isElastic))
+        
         ("save-snapshot", "Enable snapshots (for each frame by default)", cxxopts::value<bool>(o.saveSnapshot))
-        ("snapshot-interval", "Specify the snapshots frames interval", cxxopts::value<unsigned>(o.snapshotInterval))
+        ("snapshot-interval", "Specify the snapshots frames interval", cxxopts::value<int>(o.snapshotInterval))
         ("snapshot-folder", "Folder for snapshot CSV files", cxxopts::value<std::string>(o.snapshotFolder))
-        ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
+        
+        ("save-sismos", "Enable sismos (for each frame by default)", cxxopts::value<bool>(o.saveSismos))
+        ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<int>(o.sismosInterval))
         ("sismos-save-folder", "Specify the folder in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputFolder))
         ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<unsigned>(o.sismosInterval))
+        ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
         ("save-histogram", "Save an histogram-like data structure for pressure values", cxxopts::value<bool>(o.saveHistogram))
         ("histogram-interval", "Specify the size of the pressure intervals", cxxopts::value<double>(o.histogramInterval))
         ("histogram-file", "The name of the file in which the histogram is saved", cxxopts::value<std::string>(o.histogramFile))
-        ;
+
+        ("save-min", "Enable minimum computation (for each frame by default)", cxxopts::value<bool>(o.saveMin))
+        ("min-interval", "Specify the minimum computation frames interval", cxxopts::value<int>(o.minInterval))
+        ("save-max", "Enable maximum computation (for each frame by default)", cxxopts::value<bool>(o.saveMax))
+        ("max-interval", "Specify the maximum computation frames interval", cxxopts::value<int>(o.maxInterval))
+        ("save-mean", "Enable mean computation (for each frame by default)", cxxopts::value<bool>(o.saveMean))
+        ("mean-interval", "Specify the mean computation frames interval", cxxopts::value<int>(o.meanInterval))
+
+        ("parallel", "Use Kokkos for parallel reductions for operations such as min, max, etc.", cxxopts::value<bool>(o.parallel));
   }
   // clang-format on
 };

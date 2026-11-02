@@ -21,6 +21,15 @@
 #include "sem_proxy_options.h"
 #include "histogram.h"
 
+struct interval_option {
+  bool is_used;
+  int interval;
+
+  bool test(int frame){
+    return is_used && (frame % interval == 0);
+  }
+};
+
 /**
  * @class SEMproxy
  */
@@ -90,15 +99,26 @@ class SEMproxy
   float domain_size_[3] = {0};
 
   // snapshots
-  bool is_snapshots_;
-  int snap_time_interval_;
+  interval_option snapshots_opt;
   std::string snap_folder_;
+  
+  // sismo
+  interval_option sismos_opt;
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
   int sismos_time_interval_;
+
+  // histogram
   bool is_histogram_;
   double histogram_interval_;
   std::string histogram_file_;
+
+  // min, max, mean
+  interval_option min_opt;
+  interval_option max_opt;
+  interval_option mean_opt;
+
+  bool parallel_;
 
   // physics
   bool isElastic_;

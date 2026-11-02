@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import pandas as pd
+import numpy as np
 import argparse
 import subprocess
 import os
@@ -29,6 +30,8 @@ if args.run:
 
 files = [e.path for e in os.scandir(args.snapshot_folder)]
 vmax = max(pd.read_csv(f, usecols=["pressure"])["pressure"].max() for f in files)
+vmin = min(pd.read_csv(f, usecols=["pressure"])["pressure"].min() for f in files)
+vabs = max(abs(vmin), abs(vmax))
 
 plotter = pv.Plotter(off_screen=True)
 plotter.open_gif("animation.gif")
@@ -39,7 +42,9 @@ for f in files:
     cloud = pv.PolyData(df[["x", "y", "z"]].to_numpy())
     cloud["pressure"] = df["pressure"].to_numpy()
     plotter.clear()
-    plotter.add_mesh(cloud, opacity="linear", scalars="pressure", cmap="viridis", clim=[0, vmax], point_size=10, render_points_as_spheres=True)
+    p = df["pressure"].to_numpy()
+    alpha = np.clip(np.abs(p) / vabs, 0, 1)
+    plotter.add_mesh(cloud, opacity=alpha, scalars="pressure", cmap="viridis", clim=[-vabs, vabs], point_size=3, render_points_as_spheres=True)
     plotter.write_frame()
 plotter.close()
 
