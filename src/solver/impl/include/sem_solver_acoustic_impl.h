@@ -304,6 +304,27 @@ float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
   return sum / m_mesh.getNumberOfNodes();
 }
 
+template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
+float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
+    computeVariance(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, const bool &parallel)
+{
+  Welford result = {};
+  const int numberOfNodes = m_mesh.getNumberOfNodes();
+
+  if(parallel){
+    Kokkos::parallel_reduce(
+            "welford", numberOfNodes,
+            KOKKOS_LAMBDA(const int i, Welford& acc) { acc.push(fieldGlobal(i,i1)); },
+            WelfordReducer<>(result)
+    );
+  } else {
+    for (int node = 0; node < numberOfNodes; ++node) {
+      result.push(fieldGlobal(node,i1));
+    }
+  }
+  return result.variance();
+}
+
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE,
           bool IS_MODEL_ON_NODES>
 void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE,

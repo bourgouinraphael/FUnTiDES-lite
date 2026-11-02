@@ -5,6 +5,7 @@
 #include <solver_base.h>
 
 #include <cmath>
+#include "welford_variance.h"
 
 class SEMSolverBase : public SolverBase
 {
@@ -91,6 +92,9 @@ class SEMSolverBase : public SolverBase
                            const bool &parallel) = 0;
 
   virtual float computeMean(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel) = 0;
+  virtual float computeVariance(int &i1,
                             const ARRAY_REAL_VIEW &field,
                             const bool &parallel) = 0;
 };
