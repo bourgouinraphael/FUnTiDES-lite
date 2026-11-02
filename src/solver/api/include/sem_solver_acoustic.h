@@ -153,6 +153,10 @@ class SEMsolverAcoustic : public SEMSolverBase
                             const ARRAY_REAL_VIEW &field,
                             const bool &parallel);
   
+  virtual void updateHistogram(int &i1,
+                               const ARRAY_REAL_VIEW &field,
+                               histogram &histo);
+  
   /**
    * @brief Apply external forcing to the global displacement field.
    *

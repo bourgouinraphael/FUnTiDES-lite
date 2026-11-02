@@ -1,10 +1,6 @@
 #ifndef __HISTOGRAM_H__
 #define __HISTOGRAM_H__
 
-#include <data_type.h>
-#include <model_struct.h>
-#include <model_unstruct.h>
-#include <solver_factory.h>
 #include <utils.h>
 
 struct histogram {

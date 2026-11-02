@@ -89,7 +89,6 @@ class SemProxyOptions
         ("save-sismos", "Enable sismos (for each frame by default)", cxxopts::value<bool>(o.saveSismos))
         ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<int>(o.sismosInterval))
         ("sismos-save-folder", "Specify the folder in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputFolder))
-        ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<unsigned>(o.sismosInterval))
         ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
         ("save-histogram", "Save an histogram-like data structure for pressure values", cxxopts::value<bool>(o.saveHistogram))
         ("histogram-interval", "Specify the size of the pressure intervals", cxxopts::value<double>(o.histogramInterval))

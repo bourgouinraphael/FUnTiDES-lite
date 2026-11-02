@@ -278,7 +278,7 @@ void SEMproxy::run()
     }
 
     if(is_histogram_)
-        register_histogram();
+        m_solver->updateHistogram(i1, pnGlobal, histo);
 
 
     swap(i1, i2);
@@ -429,15 +429,6 @@ void SEMproxy::init_histogram()
     histo.min = 0;
     histo.max = 0;
     histo.interval = histogram_interval_;
-}
-
-void SEMproxy::register_histogram()
-{
-
-  for(int i = 0; i < m_mesh->getNumberOfNodes(); i++)
-  {
-    histo.add(pnGlobal(i, i1));
-  }
 }
 
 void SEMproxy::save_histogram()

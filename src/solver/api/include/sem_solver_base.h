@@ -3,6 +3,7 @@
 #define SEM_SOLVERBASE_HPP_
 
 #include <solver_base.h>
+#include <histogram.h>
 
 #include <cmath>
 
@@ -93,6 +94,11 @@ class SEMSolverBase : public SolverBase
   virtual float computeMean(int &i1,
                             const ARRAY_REAL_VIEW &field,
                             const bool &parallel) = 0;
+
+  virtual void updateHistogram(int &i1,
+                               const ARRAY_REAL_VIEW &field,
+                               histogram &histo) = 0;
+  
 };
 
 #endif  // SEM_SOLVERBASE_HPP_

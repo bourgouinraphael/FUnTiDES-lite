@@ -161,7 +161,6 @@ class SEMproxy
 
   // initialize the necessary structures and variables for histogram
   void init_histogram();
-  void register_histogram();
   void save_histogram();
 
   // save the sismos data in a csv file
