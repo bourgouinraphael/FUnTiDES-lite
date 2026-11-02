@@ -160,6 +160,14 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disbled") << std::endl;
   if (snapshots_opt.is_used) {
+    std::ostringstream filename;
+    filename << snap_folder_ << "/snapshots" << ".csv";
+    snap_folder_ = filename.str();
+
+    snap_file_.open(snap_folder_);
+    if (!snap_file_.is_open())
+      throw std::runtime_error("Unable to open snapshot file: " + snap_folder_);
+
     std::cout << "Snapshots are generated each " << snapshots_opt.interval << "frame(s)" << std::endl;
     std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
   }
@@ -231,7 +239,7 @@ void SEMproxy::run()
     pnAtReceiver(0, indexTimeSample) = varnp1;
 
     if (snapshots_opt.test(indexTimeSample))
-      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
+      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_file_);
 
     if (sismos_opt.test(indexTimeSample))
       save_sismos(indexTimeSample);
@@ -277,6 +285,9 @@ void SEMproxy::run()
     totalOutputTime += system_clock::now() - startOutputTime;
   }
   ///////////////////////////////////////////////////////////////////////////////
+
+  if (snapshots_opt.is_used)
+    snap_file_.close();
 
   if (min_opt.is_used || max_opt.is_used || mean_opt.is_used) {
     std::cout << "------------------------------------------------\n" << std::endl;

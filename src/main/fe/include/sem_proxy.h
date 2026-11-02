@@ -100,6 +100,7 @@ class SEMproxy
   // snapshots
   interval_option snapshots_opt;
   std::string snap_folder_;
+  std::ofstream snap_file_;
   
   // sismo
   interval_option sismos_opt;
