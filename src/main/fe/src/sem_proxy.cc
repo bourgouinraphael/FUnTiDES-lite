@@ -316,7 +316,7 @@ void SEMproxy::run()
   if (is_histogram_){
     std::cout << "------------------------------------------------\n" << std::endl;
     auto t0 = std::chrono::steady_clock::now();
-    save_histogram();
+    histo.save(histogram_file_);
     auto t1 = std::chrono::steady_clock::now();
     hist_computation_time += (t1 - t0);
 
@@ -441,23 +441,6 @@ void SEMproxy::init_histogram()
     histo.min = 0;
     histo.max = 0;
     histo.interval = histogram_interval_;
-}
-
-void SEMproxy::save_histogram()
-{
-    std::ofstream file(histogram_file_);
-    if (!file){
-        throw std::runtime_error("Unable to open histogram save file: " +
-                                histogram_file_);
-    }
-
-    file << "bin,count" << std::endl;
-    double current_bin = histo.min;
-    for (auto it = histo.array.begin(); it < histo.array.end(); it++)
-    {
-        file << std::fixed << std::setprecision(numeric_limits<double>::max_digits10) << current_bin << ',' << *it << std::endl;
-        current_bin += histogram_interval_;
-    }
 }
 
 // Initialize sources

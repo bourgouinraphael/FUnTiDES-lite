@@ -2,6 +2,7 @@
 #define __HISTOGRAM_H__
 
 #include <utils.h>
+#include <iomanip>
 
 struct histogram {
   std::vector<int> array;
@@ -36,6 +37,22 @@ struct histogram {
     {
       pos = (min < 0) ? (value - min) / interval : value / interval;
       array.at(pos) += 1;
+    }
+  }
+
+  void save(std::string filename){
+    std::ofstream file(filename);
+    if (!file){
+        throw std::runtime_error("Unable to open histogram save file: " +
+                                filename);
+    }
+
+    file << "bin,count" << std::endl;
+    double current_bin = min;
+    for (auto it = array.begin(); it < array.end(); it++)
+    {
+        file << std::fixed << std::setprecision(numeric_limits<double>::max_digits10) << current_bin << ',' << *it << std::endl;
+        current_bin += interval;
     }
   }
 };
