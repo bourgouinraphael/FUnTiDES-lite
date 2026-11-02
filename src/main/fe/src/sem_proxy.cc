@@ -200,6 +200,8 @@ void SEMproxy::run()
   int mean_iter = 0;
   std::chrono::steady_clock::duration mean_computation_time{};
 
+  std::chrono::steady_clock::duration hist_computation_time{};
+
   std::vector<int> operationOrder = {0, 1, 2};
   std::mt19937 rng(std::random_device{}());
 
@@ -277,8 +279,12 @@ void SEMproxy::run()
       }
     }
 
-    if(is_histogram_)
+    if(is_histogram_){
+        auto t0 = std::chrono::steady_clock::now();
         m_solver->updateHistogram(i1, pnGlobal, histo);
+        auto t1 = std::chrono::steady_clock::now();
+        hist_computation_time += (t1 - t0);
+    }
 
 
     swap(i1, i2);
@@ -308,7 +314,13 @@ void SEMproxy::run()
   }
 
   if (is_histogram_){
-      save_histogram();
+    std::cout << "------------------------------------------------\n" << std::endl;
+    auto t0 = std::chrono::steady_clock::now();
+    save_histogram();
+    auto t1 = std::chrono::steady_clock::now();
+    hist_computation_time += (t1 - t0);
+
+    std::cout << "Histogram commutation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(hist_computation_time).count() << "ms" << std::endl;
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
