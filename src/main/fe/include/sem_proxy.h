@@ -157,9 +157,6 @@ class SEMproxy
   // save the sismos data in a csv file
   void save_sismos(const int &indexTimeStep);
 
-  void update_variance_cpu();
-  void update_variance_kokkos();
-
   // private methods to pars argv options
   int getPhysic(string physicArg);
 
