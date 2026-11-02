@@ -6,6 +6,7 @@
 #include <histogram.h>
 
 #include <cmath>
+#include "welford_variance.h"
 
 class SEMSolverBase : public SolverBase
 {
@@ -81,7 +82,7 @@ class SEMSolverBase : public SolverBase
   virtual void saveSnapshot(const int &indexTimeStep,
                             int &i1,
                             const ARRAY_REAL_VIEW &field,
-                            const std::string& snapshotFolder) = 0;
+                            std::ofstream &file) = 0;
 
   virtual float computeMin(int &i1,
                            const ARRAY_REAL_VIEW &field,
@@ -99,6 +100,9 @@ class SEMSolverBase : public SolverBase
                                const ARRAY_REAL_VIEW &field,
                                histogram &histo) = 0;
   
+  virtual float computeVariance(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel) = 0;
 };
 
 #endif  // SEM_SOLVERBASE_HPP_

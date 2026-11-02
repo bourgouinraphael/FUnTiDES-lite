@@ -139,7 +139,7 @@ class SEMsolverAcoustic : public SEMSolverBase
 
   void saveSnapshot(const int &indexTimeStep, int &i1, 
                     const ARRAY_REAL_VIEW &fieldGlobal,
-                    const std::string& snapshotFolder);
+                    std::ofstream &file);
   
   virtual float computeMin(int &i1,
                            const ARRAY_REAL_VIEW &field,
@@ -150,6 +150,10 @@ class SEMsolverAcoustic : public SEMSolverBase
                            const bool &parallel);
 
   virtual float computeMean(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel);
+
+  virtual float computeVariance(int &i1,
                             const ARRAY_REAL_VIEW &field,
                             const bool &parallel);
   

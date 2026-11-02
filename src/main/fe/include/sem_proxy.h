@@ -18,6 +18,7 @@
 #include <string>
 #include <variant>
 
+
 #include "sem_proxy_options.h"
 #include "histogram.h"
 
@@ -29,6 +30,7 @@ struct interval_option {
     return is_used && (frame % interval == 0);
   }
 };
+#include "welford_variance.h"
 
 /**
  * @class SEMproxy
@@ -101,6 +103,7 @@ class SEMproxy
   // snapshots
   interval_option snapshots_opt;
   std::string snap_folder_;
+  std::ofstream snap_file_;
   
   // sismo
   interval_option sismos_opt;
@@ -117,6 +120,7 @@ class SEMproxy
   interval_option min_opt;
   interval_option max_opt;
   interval_option mean_opt;
+  interval_option variance_opt;
 
   bool parallel_;
 

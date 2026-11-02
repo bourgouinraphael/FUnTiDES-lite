@@ -46,6 +46,8 @@ class SemProxyOptions
   int maxInterval = 1;
   bool saveMean = false;
   int meanInterval = 1;
+  bool saveVariance = false;
+  int varianceInterval = 1;
 
   bool parallel = false;
 
@@ -100,6 +102,9 @@ class SemProxyOptions
         ("max-interval", "Specify the maximum computation frames interval", cxxopts::value<int>(o.maxInterval))
         ("save-mean", "Enable mean computation (for each frame by default)", cxxopts::value<bool>(o.saveMean))
         ("mean-interval", "Specify the mean computation frames interval", cxxopts::value<int>(o.meanInterval))
+        ("save-variance", "Enable variance computation (for each frame by default)", cxxopts::value<bool>(o.saveVariance))
+        ("variance-interval", "Specify the variance save frames interval", cxxopts::value<int>(o.varianceInterval))
+        
 
         ("parallel", "Use Kokkos for parallel reductions for operations such as min, max, etc.", cxxopts::value<bool>(o.parallel));
   }

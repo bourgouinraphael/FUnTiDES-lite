@@ -73,6 +73,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   min_opt = {opt.saveMin, opt.minInterval};
   max_opt = {opt.saveMax, opt.maxInterval};
   mean_opt = {opt.saveMean, opt.meanInterval};
+  variance_opt = {opt.saveVariance, opt.varianceInterval};
 
   parallel_ = opt.parallel;
 
@@ -165,6 +166,14 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disbled") << std::endl;
   if (snapshots_opt.is_used) {
+    std::ostringstream filename;
+    filename << snap_folder_ << "/snapshots" << ".csv";
+    snap_folder_ = filename.str();
+
+    snap_file_.open(snap_folder_);
+    if (!snap_file_.is_open())
+      throw std::runtime_error("Unable to open snapshot file: " + snap_folder_);
+
     std::cout << "Snapshots are generated each " << snapshots_opt.interval << "frame(s)" << std::endl;
     std::cout << "Snapshots are saved in \"" << snap_folder_ << "\"" << std::endl;
   }
@@ -202,7 +211,10 @@ void SEMproxy::run()
 
   std::chrono::steady_clock::duration hist_computation_time{};
 
-  std::vector<int> operationOrder = {0, 1, 2};
+  float variance = 0;
+  std::chrono::steady_clock::duration variance_computation_time{};
+
+  std::vector<int> operationOrder = {0, 1, 2, 3};
   std::mt19937 rng(std::random_device{}());
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -242,7 +254,7 @@ void SEMproxy::run()
     pnAtReceiver(0, indexTimeSample) = varnp1;
 
     if (snapshots_opt.test(indexTimeSample))
-      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_folder_);
+      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_file_);
 
     if (sismos_opt.test(indexTimeSample))
       save_sismos(indexTimeSample);
@@ -277,6 +289,13 @@ void SEMproxy::run()
         auto t1 = std::chrono::steady_clock::now();
         mean_computation_time += (t1 - t0);
       }
+      else if(op == 3 && variance_opt.test(indexTimeSample)){
+        auto t0 = std::chrono::steady_clock::now();
+        variance = m_solver->computeVariance(i1, pnGlobal, parallel_);
+        Kokkos::fence();
+        auto t1 = std::chrono::steady_clock::now();
+        variance_computation_time += (t1 - t0);
+      }
     }
 
     if(is_histogram_){
@@ -297,7 +316,10 @@ void SEMproxy::run()
   }
   ///////////////////////////////////////////////////////////////////////////////
 
-  if (min_opt.is_used || max_opt.is_used || mean_opt.is_used) {
+  if (snapshots_opt.is_used)
+    snap_file_.close();
+
+  if (min_opt.is_used || max_opt.is_used || mean_opt.is_used || variance_opt.is_used) {
     std::cout << "------------------------------------------------\n" << std::endl;
     if (min_opt.is_used) {
       std::cout << "Min: " << min << std::endl;
@@ -310,6 +332,10 @@ void SEMproxy::run()
     if (mean_opt.is_used) {
       std::cout << "Mean: " << mean << std::endl;
       std::cout << "Mean computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(mean_computation_time).count() << "ms" << std::endl;
+    }
+    if (variance_opt.is_used) {
+      std::cout << "Variance: " << variance << std::endl;
+      std::cout << "Variance computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(variance_computation_time).count() << "ms" << std::endl;
     }
   }
 
