@@ -209,16 +209,10 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     saveSnapshot(const int &indexTimeStep,
                  int &i1,
                  const ARRAY_REAL_VIEW &fieldGlobal,
-                 const std::string& snapshotFolder)
+                 std::ofstream &file)
 {
-  std::ostringstream filename;
-  filename << snapshotFolder << "/snapshot_" << std::setw(6) << std::setfill('0') << indexTimeStep << ".csv";
-
-  std::ofstream file(filename.str());
-  if (!file.is_open())
-    throw std::runtime_error("Unable to open snapshot file: " + filename.str());
-
-  file << "node_id,x,y,z,pressure\n";
+  if (indexTimeStep == 0)
+    file << "iteration,node_id,x,y,z,pressure\n";
 
   const int numberOfNodes = m_mesh.getNumberOfNodes();
   for (int node = 0; node < numberOfNodes; ++node) {
@@ -226,11 +220,11 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     const auto y = m_mesh.nodeCoord(node, 1);
     const auto z = m_mesh.nodeCoord(node, 2);
     const auto pressure = fieldGlobal(node, i1);
-    file << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
+    file << indexTimeStep << ',' << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
   }
 
   if (!file)
-    throw std::runtime_error("Error writing snapshot file: " + filename.str());
+    throw std::runtime_error("Error writing snapshot file");
 }
 
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
