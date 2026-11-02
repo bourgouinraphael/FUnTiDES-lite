@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument("-s", "--sem_options", type=str, default="")
 parser.add_argument("-f", "--sismos_folder", type=str, default="./sismos")
-parser.add_argument("-p", "--sismos_pos_file", type=str, default="./sismos.csv")
+parser.add_argument("-p", "--sismos_pos_file", type=str, default="./sismos_coords.csv")
 parser.add_argument("-i", "--sismos_interval", type=int, default=1)
 parser.add_argument("--run", action=argparse.BooleanOptionalAction)
 
@@ -28,23 +28,16 @@ if args.run:
     # run the simulation
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
-files = sorted(
-    [e.path for e in os.scandir(args.sismos_folder) if e.is_file()],
-    key=lambda f: int(os.path.basename(f).split("_")[1].split(".")[0])
-)
 measurements = {}
 
-for f in files:
-    df = pd.read_csv(f)
-    time = int(f.split("_")[1].split(".")[0])
-    for i, row in df.iterrows():
-        name = f"({float(row['x'])},{float(row['y'])},{float(row['z'])})"
-        if measurements.get(name, None) is None:
-            measurements[name] = ([float(time)], [float(row["pressure"])])
-        else:
-            measurements[name][0].append(float(time))
-            measurements[name][1].append(float(row["pressure"]))
-
+df = pd.read_csv(args.sismos_folder + "/sismos.csv")
+for i, row in df.iterrows():
+    name = f"({float(row['x'])},{float(row['y'])},{float(row['z'])})"
+    if measurements.get(name, None) is None:
+        measurements[name] = ([float(row["iteration"])], [float(row["pressure"])])
+    else:
+        measurements[name][0].append(float(row["iteration"]))
+        measurements[name][1].append(float(row["pressure"]))
 
 for k, v in measurements.items():
     plt.plot(v[0], v[1], label=k)

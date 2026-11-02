@@ -109,6 +109,7 @@ class SEMproxy
   interval_option sismos_opt;
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
+  std::ofstream sismos_file_;
   int sismos_time_interval_;
 
   // histogram
