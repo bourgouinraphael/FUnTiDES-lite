@@ -19,6 +19,7 @@
 #include <variant>
 
 #include "sem_proxy_options.h"
+#include "histogram.h"
 
 /**
  * @class SEMproxy
@@ -95,7 +96,9 @@ class SEMproxy
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
   int sismos_time_interval_;
-  float histogram_interval_;
+  bool is_histogram_;
+  double histogram_interval_;
+  std::string histogram_file_;
 
   // physics
   bool isElastic_;
@@ -125,6 +128,8 @@ class SEMproxy
   std::vector<std::array<float, 3>> sismosPositions;
   std::vector<int> sismosNodeIdx;
 
+  histogram histo;
+
   // initialize source and RHS
   void init_source();
 
@@ -133,6 +138,11 @@ class SEMproxy
 
   // read the sismos from a file to an array containing their coordinates
   void init_sismos();
+
+  // initialize the necessary structures and variables for histogram
+  void init_histogram();
+  void register_histogram();
+  void save_histogram();
 
   // save the sismos data in a csv file
   void save_sismos(const int &indexTimeStep);
@@ -143,46 +153,6 @@ class SEMproxy
   SolverFactory::implemType getImplem(string implemArg);
   SolverFactory::methodType getMethod(string methodArg);
   SolverFactory::meshType getMesh(string meshArg);
-};
-
-struct histogram {
-  std::vector<int> array;
-  double min;
-  double max;
-  int interval;
-  
-  void add(double value)
-  {
-    int pos;
-    if (value > max)
-      {
-        for(double i = max; i < value; i+= interval)
-        {
-          array.push_back(0);
-        }
-        max = value;
-        array.push_back(1);
-      }
-    else if(value < min)
-    {
-      for(double i  = min; i > value; i -= interval)
-      {
-        array.insert(array.cbegin(), 0);
-      }
-      min = value;
-      array.insert(array.cbegin(), 1);
-    }
-    else
-    {
-      pos = (min < 0) ? (value - min) / interval : value / interval;
-      array.at(pos) += 1;
-    }
-  }
-
-  std::string to_string()
-  {
-    return std::cout << min << ', ' << max << ', ' << array << '\n';
-  }
 };
 
 #endif /* SEMPROXY_HPP_ */

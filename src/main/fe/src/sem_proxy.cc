@@ -57,7 +57,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   sismos_positions_path_ = opt.sismosPosPath;
   sismos_output_folder_ = opt.sismosOutputFolder;
   sismos_time_interval_ = opt.sismosInterval;
+  is_histogram_ = opt.saveHistogram;
   histogram_interval_ = opt.histogramInterval;
+  histogram_file_ = opt.histogramFile;
 
   const SolverFactory::methodType methodType = getMethod(opt.method);
   const SolverFactory::implemType implemType = getImplem(opt.implem);
@@ -165,6 +167,9 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   {
     std::cout << "Sismos output folder: " << sismos_output_folder_ << std::endl;
   }
+  if (is_histogram_) {
+    std::cout << "Histogram is saved" << std::endl;
+  }
 }
 
 void SEMproxy::run()
@@ -217,8 +222,8 @@ void SEMproxy::run()
     if (!sismos_output_folder_.empty() && indexTimeSample % sismos_time_interval_ == 0)
         save_sismos(indexTimeSample);
 
-    if(histogram)
-        register_histogram(i1)
+    if(is_histogram_)
+        register_histogram();
 
 
     swap(i1, i2);
@@ -228,6 +233,10 @@ void SEMproxy::run()
     solverData.m_i2 = tmp;
 
     totalOutputTime += system_clock::now() - startOutputTime;
+  }
+
+  if (is_histogram_){
+      save_histogram();
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -344,21 +353,36 @@ void SEMproxy::save_sismos(const int &indexTimeStep)
 
 void SEMproxy::init_histogram()
 {
-  histogram histo = {
-    array,
-    std::numerics_limits<double>::max(), // setting min to +inf
-    std::numerics_limits<double>::min(), // setting max to -inf
-    histogram_interval_,
-  };
+    histo.array = {};
+    histo.min = 0;
+    histo.max = 0;
+    histo.interval = histogram_interval_;
 }
 
 void SEMproxy::register_histogram()
 {
-  
+
   for(int i = 0; i < m_mesh->getNumberOfNodes(); i++)
   {
     histo.add(pnGlobal(i, i1));
   }
+}
+
+void SEMproxy::save_histogram()
+{
+    std::ofstream file(histogram_file_);
+    if (!file){
+        throw std::runtime_error("Unable to open histogram save file: " +
+                                histogram_file_);
+    }
+
+    file << "bin,count" << std::endl;
+    double current_bin = histo.min;
+    for (auto it = histo.array.begin(); it < histo.array.end(); it++)
+    {
+        file << std::fixed << std::setprecision(numeric_limits<double>::max_digits10) << current_bin << ',' << *it << std::endl;
+        current_bin += histogram_interval_;
+    }
 }
 
 // Initialize sources

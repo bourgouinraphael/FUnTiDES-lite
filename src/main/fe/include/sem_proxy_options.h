@@ -35,7 +35,9 @@ class SemProxyOptions
   std::string sismosOutputFolder = "";
   unsigned sismosInterval = 1;
   
-  float histogramInterval = 0;
+  bool saveHistogram = false;
+  double histogramInterval = 0.2;
+  std::string histogramFile = "histogram.csv";
 
   void validate() const
   {
@@ -75,7 +77,9 @@ class SemProxyOptions
         ("sismos-pos-file", "Specify the file storing the sismos positions", cxxopts::value<std::string>(o.sismosPosPath))
         ("sismos-save-folder", "Specify the folder in which the sismos positions will be saved", cxxopts::value<std::string>(o.sismosOutputFolder))
         ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<unsigned>(o.sismosInterval))
-        ("histogram-interval", "Specify the size of the pressure intervals", cxxopts::value<unsigned>(o.histogramInterval))
+        ("save-histogram", "Save an histogram-like data structure for pressure values", cxxopts::value<bool>(o.saveHistogram))
+        ("histogram-interval", "Specify the size of the pressure intervals", cxxopts::value<double>(o.histogramInterval))
+        ("histogram-file", "The name of the file in which the histogram is saved", cxxopts::value<std::string>(o.histogramFile))
         ;
   }
   // clang-format on
