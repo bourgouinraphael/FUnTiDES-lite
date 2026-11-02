@@ -152,6 +152,10 @@ class SEMsolverAcoustic : public SEMSolverBase
   virtual float computeMean(int &i1,
                             const ARRAY_REAL_VIEW &field,
                             const bool &parallel);
+
+  virtual float computeVariance(int &i1,
+                            const ARRAY_REAL_VIEW &field,
+                            const bool &parallel);
   
   /**
    * @brief Apply external forcing to the global displacement field.

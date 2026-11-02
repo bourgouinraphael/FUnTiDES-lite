@@ -68,6 +68,7 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   min_opt = {opt.saveMin, opt.minInterval};
   max_opt = {opt.saveMax, opt.maxInterval};
   mean_opt = {opt.saveMean, opt.meanInterval};
+  variance_opt = {opt.saveVariance, opt.varianceInterval};
 
   parallel_ = opt.parallel;
 
@@ -199,7 +200,10 @@ void SEMproxy::run()
   int mean_iter = 0;
   std::chrono::steady_clock::duration mean_computation_time{};
 
-  std::vector<int> operationOrder = {0, 1, 2};
+  float variance = 0;
+  std::chrono::steady_clock::duration variance_computation_time{};
+
+  std::vector<int> operationOrder = {0, 1, 2, 3};
   std::mt19937 rng(std::random_device{}());
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -274,6 +278,13 @@ void SEMproxy::run()
         auto t1 = std::chrono::steady_clock::now();
         mean_computation_time += (t1 - t0);
       }
+      else if(op == 3 && variance_opt.test(indexTimeSample)){
+        auto t0 = std::chrono::steady_clock::now();
+        variance = m_solver->computeVariance(i1, pnGlobal, parallel_);
+        Kokkos::fence();
+        auto t1 = std::chrono::steady_clock::now();
+        variance_computation_time += (t1 - t0);
+      }
     }
 
     swap(i1, i2);
@@ -289,7 +300,7 @@ void SEMproxy::run()
   if (snapshots_opt.is_used)
     snap_file_.close();
 
-  if (min_opt.is_used || max_opt.is_used || mean_opt.is_used) {
+  if (min_opt.is_used || max_opt.is_used || mean_opt.is_used || variance_opt.is_used) {
     std::cout << "------------------------------------------------\n" << std::endl;
     if (min_opt.is_used) {
       std::cout << "Min: " << min << std::endl;
@@ -302,6 +313,10 @@ void SEMproxy::run()
     if (mean_opt.is_used) {
       std::cout << "Mean: " << mean << std::endl;
       std::cout << "Mean computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(mean_computation_time).count() << "ms" << std::endl;
+    }
+    if (variance_opt.is_used) {
+      std::cout << "Variance: " << variance << std::endl;
+      std::cout << "Variance computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(variance_computation_time).count() << "ms" << std::endl;
     }
   }
 
