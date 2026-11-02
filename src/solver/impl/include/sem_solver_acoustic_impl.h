@@ -299,6 +299,16 @@ float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
 }
 
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
+void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
+    updateHistogram(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, histogram &histo)
+{
+  for(int i = 0; i < m_mesh.getNumberOfNodes(); i++)
+  {
+    histo.add(fieldGlobal(i, i1));
+  }
+}
+
+template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>
 float SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     computeVariance(int &i1, const ARRAY_REAL_VIEW &fieldGlobal, const bool &parallel)
 {
