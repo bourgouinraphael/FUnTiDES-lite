@@ -64,6 +64,11 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   sismos_opt = {opt.saveSismos, opt.sismosInterval};
   sismos_positions_path_ = opt.sismosPosPath;
   sismos_output_folder_ = opt.sismosOutputFolder;
+  sismos_time_interval_ = opt.sismosInterval;
+
+  is_histogram_ = opt.saveHistogram;
+  histogram_interval_ = opt.histogramInterval;
+  histogram_file_ = opt.histogramFile;
   
   min_opt = {opt.saveMin, opt.minInterval};
   max_opt = {opt.saveMax, opt.maxInterval};
@@ -180,6 +185,10 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
     std::cout << "Sismos are generated each " << sismos_opt.interval << "frame(s)" << std::endl;
     std::cout << "Sismos are saved in \"" << sismos_output_folder_ << "\"" << std::endl;
   }
+  if (is_histogram_) {
+    std::cout << "Histogram is saved" << std::endl;
+    init_histogram();
+  }
 }
 
 void SEMproxy::run()
@@ -199,6 +208,8 @@ void SEMproxy::run()
   float mean = 0;
   int mean_iter = 0;
   std::chrono::steady_clock::duration mean_computation_time{};
+
+  std::chrono::steady_clock::duration hist_computation_time{};
 
   float variance = 0;
   std::chrono::steady_clock::duration variance_computation_time{};
@@ -287,6 +298,14 @@ void SEMproxy::run()
       }
     }
 
+    if(is_histogram_){
+        auto t0 = std::chrono::steady_clock::now();
+        m_solver->updateHistogram(i1, pnGlobal, histo);
+        auto t1 = std::chrono::steady_clock::now();
+        hist_computation_time += (t1 - t0);
+    }
+
+
     swap(i1, i2);
 
     auto tmp = solverData.m_i1;
@@ -318,6 +337,16 @@ void SEMproxy::run()
       std::cout << "Variance: " << variance << std::endl;
       std::cout << "Variance computation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(variance_computation_time).count() << "ms" << std::endl;
     }
+  }
+
+  if (is_histogram_){
+    std::cout << "------------------------------------------------\n" << std::endl;
+    auto t0 = std::chrono::steady_clock::now();
+    histo.save(histogram_file_);
+    auto t1 = std::chrono::steady_clock::now();
+    hist_computation_time += (t1 - t0);
+
+    std::cout << "Histogram commutation time: " << std::chrono::duration_cast<std::chrono::milliseconds>(hist_computation_time).count() << "ms" << std::endl;
   }
 
   float kerneltime_ms = time_point_cast<microseconds>(totalComputeTime)
@@ -430,6 +459,14 @@ void SEMproxy::save_sismos(const int &indexTimeStep)
       output << nodeIdx << ',' << sismoPos[0] << ',' << sismoPos[1] << ','
           << sismoPos[2] << ',' << pressure << std::endl;
   }
+}
+
+void SEMproxy::init_histogram()
+{
+    histo.array = {};
+    histo.min = 0;
+    histo.max = 0;
+    histo.interval = histogram_interval_;
 }
 
 // Initialize sources

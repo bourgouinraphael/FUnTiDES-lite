@@ -20,6 +20,7 @@
 
 
 #include "sem_proxy_options.h"
+#include "histogram.h"
 
 struct interval_option {
   bool is_used;
@@ -108,6 +109,12 @@ class SEMproxy
   interval_option sismos_opt;
   std::string sismos_positions_path_;
   std::string sismos_output_folder_;
+  int sismos_time_interval_;
+
+  // histogram
+  bool is_histogram_;
+  double histogram_interval_;
+  std::string histogram_file_;
 
   // min, max, mean
   interval_option min_opt;
@@ -145,6 +152,8 @@ class SEMproxy
   std::vector<std::array<float, 3>> sismosPositions;
   std::vector<int> sismosNodeIdx;
 
+  histogram histo;
+
   // initialize source and RHS
   void init_source();
 
@@ -153,6 +162,9 @@ class SEMproxy
 
   // read the sismos from a file to an array containing their coordinates
   void init_sismos();
+
+  // initialize the necessary structures and variables for histogram
+  void init_histogram();
 
   // save the sismos data in a csv file
   void save_sismos(const int &indexTimeStep);
