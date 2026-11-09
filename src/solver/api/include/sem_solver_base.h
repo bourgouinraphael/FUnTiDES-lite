@@ -82,6 +82,8 @@ class SEMSolverBase : public SolverBase
   virtual void saveSnapshot(const int &indexTimeStep,
                             int &i1,
                             const ARRAY_REAL_VIEW &field,
+                            bool saveBinary,
+                            int quantisationLevel,
                             std::ofstream &file) = 0;
 
   virtual float computeMin(int &i1,

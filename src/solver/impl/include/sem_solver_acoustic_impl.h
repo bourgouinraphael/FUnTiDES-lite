@@ -209,10 +209,21 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     saveSnapshot(const int &indexTimeStep,
                  int &i1,
                  const ARRAY_REAL_VIEW &fieldGlobal,
+                 bool saveBinary,
+                 int quantisationLevel,
                  std::ofstream &file)
 {
-  if (indexTimeStep == 0)
-    file << "iteration,node_id,x,y,z,pressure\n";
+  if (indexTimeStep == 0){
+      if (saveBinary){
+          char coord_data_size = sizeof(m_mesh.nodeCoord(0, 0));
+          file.write(reinterpret_cast<const char*>(&coord_data_size), sizeof(coord_data_size));
+          char pressure_data_size = sizeof(fieldGlobal(0, i1));
+          file.write(reinterpret_cast<const char*>(&pressure_data_size), sizeof(pressure_data_size));
+
+      } else {
+          file << "iteration,node_id,x,y,z,pressure\n";
+      }
+  }
 
   const int numberOfNodes = m_mesh.getNumberOfNodes();
   for (int node = 0; node < numberOfNodes; ++node) {
@@ -220,7 +231,15 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
     const auto y = m_mesh.nodeCoord(node, 1);
     const auto z = m_mesh.nodeCoord(node, 2);
     const auto pressure = fieldGlobal(node, i1);
-    file << indexTimeStep << ',' << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
+    if (saveBinary){
+        file.write(reinterpret_cast<const char *>(&indexTimeStep), sizeof(indexTimeStep));
+        file.write(reinterpret_cast<const char *>(&x), sizeof(x));
+        file.write(reinterpret_cast<const char *>(&y), sizeof(y));
+        file.write(reinterpret_cast<const char *>(&z), sizeof(z));
+        file.write(reinterpret_cast<const char *>(&pressure), sizeof(pressure));
+    } else {
+        file << indexTimeStep << ',' << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
+    }
   }
 
   if (!file)

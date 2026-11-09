@@ -30,6 +30,8 @@ class SemProxyOptions
   bool saveSnapshot = false;
   int snapshotInterval = 1;
   std::string snapshotFolder = ".";
+  bool snapshotSaveBinary = false;
+  int snapshotQuantisationLevel = 0;
   
   bool saveSismos = false;
   int sismosInterval = 1;
@@ -87,6 +89,8 @@ class SemProxyOptions
         ("save-snapshot", "Enable snapshots (for each frame by default)", cxxopts::value<bool>(o.saveSnapshot))
         ("snapshot-interval", "Specify the snapshots frames interval", cxxopts::value<int>(o.snapshotInterval))
         ("snapshot-folder", "Folder for snapshot CSV files", cxxopts::value<std::string>(o.snapshotFolder))
+        ("snapshot-save-binary", "Wether to save the snapshot data in binary or not", cxxopts::value<bool>(o.snapshotSaveBinary))
+        ("snapshot-quantisation-level", "The level of quantisation of the stored data (either 0, 8, or 16)", cxxopts::value<int>(o.snapshotQuantisationLevel))
         
         ("save-sismos", "Enable sismos (for each frame by default)", cxxopts::value<bool>(o.saveSismos))
         ("sismos-save-interval", "Specify the sismos save frames interval", cxxopts::value<int>(o.sismosInterval))

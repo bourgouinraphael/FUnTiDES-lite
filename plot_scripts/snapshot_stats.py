@@ -12,15 +12,21 @@ parser = argparse.ArgumentParser(
         )
 
 parser.add_argument("-s", "--sem_options", type=str, default="")
-parser.add_argument("-f", "--snapshot_folder", type=str, default="./snapshots")
+parser.add_argument("-f", "--snapshot_folder", type=str, default=".")
 parser.add_argument("-i", "--snapshot_interval", type=int, default=100)
 parser.add_argument("-b", "--histogram_bar_sizes", type=float, default=0.1)
 parser.add_argument("--run", action=argparse.BooleanOptionalAction)
+parser.add_argument("--binary", action=argparse.BooleanOptionalAction)
 
 args = parser.parse_args()
 
 if args.run:
-    args_passed_to_sem = args.sem_options + f" --save-snapshot --snapshot-interval {args.snapshot_interval} --snapshot-folder {args.snapshot_folder}"
+    if args.binary:
+        binary_arg = "--snaphot-save-binary"
+    else:
+        binary_arg = "" 
+
+    args_passed_to_sem = args.sem_options + f" --save-snapshot --snapshot-interval {args.snapshot_interval} --snapshot-folder {args.snapshot_folder} {binary_arg}"
 
     # If the folder dir doesn't exists, create it
     if not os.path.exists(args.snapshot_folder):
@@ -29,7 +35,21 @@ if args.run:
     # run the simulation
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
-pressure_values = [list(pd.read_csv(args.snapshot_folder + "/snapshots.csv")["pressure"])]
+file = args.snapshot_folder + "/snapshots.csv";
+if args.binary:
+    with open(file, 'rb') as f:
+        coordinate_data_size = int.from_bytes(f.read(1))
+        pressure_data_size = int.from_bytes(f.read(1))
+    dt = np.dtype([("iteration", np.int32), ('x', np.float32), ('y', np.float32), ('z', np.float32), ("pressure", np.float32)])
+    data = np.fromfile(file, dtype=dt, offset=2) 
+    df = pd.DataFrame(data, columns=data.dtype.names)
+
+else:
+    df = pd.read_csv(file)
+    
+print(df)
+
+pressure_values = [list(df["pressure"])]
 pressure_values_flattened = [x for l in pressure_values for x in l]
 
 pressure_max = max(pressure_values_flattened)

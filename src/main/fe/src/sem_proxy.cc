@@ -60,6 +60,8 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
 
   snapshots_opt = {opt.saveSnapshot, opt.snapshotInterval};
   snap_folder_ = opt.snapshotFolder;
+  snapshot_save_binary_ = opt.snapshotSaveBinary;
+  snapshot_quantisation_level_ = opt.snapshotQuantisationLevel;
 
   sismos_opt = {opt.saveSismos, opt.sismosInterval};
   sismos_positions_path_ = opt.sismosPosPath;
@@ -165,12 +167,17 @@ SEMproxy::SEMproxy(const SemProxyOptions& opt)
   std::cout << "Simulated time is " << timemax_ << "s" << std::endl;
 
   std::cout << "Snapshots are " << (snapshots_opt.is_used ? "enabled" : "disabled") << std::endl;
+
   if (snapshots_opt.is_used) {
     std::ostringstream filename;
     filename << snap_folder_ << "/snapshots.csv";
     snap_folder_ = filename.str();
 
-    snap_file_.open(snap_folder_);
+    if (snapshot_save_binary_){
+        snap_file_.open(snap_folder_, std::ios::binary);
+    } else {
+        snap_file_.open(snap_folder_);
+    }
     if (!snap_file_.is_open())
       throw std::runtime_error("Unable to open snapshot file: " + snap_folder_);
 
@@ -198,6 +205,8 @@ void SEMproxy::run()
 
   SEMsolverDataAcoustic solverData(i1, i2, myRHSTerm, pnGlobal, rhsElement,
                                    rhsWeights);
+
+  std::chrono::steady_clock::duration snapshot_save_time{};
 
   float min;
   std::chrono::steady_clock::duration min_computation_time{};
@@ -253,8 +262,12 @@ void SEMproxy::run()
 
     pnAtReceiver(0, indexTimeSample) = varnp1;
 
-    if (snapshots_opt.test(indexTimeSample))
-      m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snap_file_);
+    if (snapshots_opt.test(indexTimeSample)){
+        auto t0 = std::chrono::steady_clock::now();
+        m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snapshot_save_binary_, snapshot_quantisation_level_, snap_file_);
+        auto t1 = std::chrono::steady_clock::now();
+        snapshot_save_time += (t1 - t0);
+    }
 
     if (sismos_opt.test(indexTimeSample))
       save_sismos(indexTimeSample);
@@ -316,8 +329,11 @@ void SEMproxy::run()
   }
   ///////////////////////////////////////////////////////////////////////////////
 
-  if (snapshots_opt.is_used)
+  if (snapshots_opt.is_used){
     snap_file_.close();
+    std::cout << "------------------------------------------------\n" << std::endl;
+    std::cout << "Snapshot save time: " << std::chrono::duration_cast<std::chrono::milliseconds>(snapshot_save_time).count() << "ms" << std::endl;
+  }
 
   if (sismos_opt.is_used)
     sismos_file_.close();
