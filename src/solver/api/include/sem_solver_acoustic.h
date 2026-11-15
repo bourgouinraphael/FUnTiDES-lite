@@ -141,6 +141,7 @@ class SEMsolverAcoustic : public SEMSolverBase
                     const ARRAY_REAL_VIEW &fieldGlobal,
                     bool saveBinary,
                     int quantisationLevel,
+                    const bool parallelMinMax,
                     std::ofstream &file);
   
   virtual float computeMin(int &i1,

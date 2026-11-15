@@ -84,6 +84,7 @@ class SEMSolverBase : public SolverBase
                             const ARRAY_REAL_VIEW &field,
                             bool saveBinary,
                             int quantisationLevel,
+                            const bool parallelMinMax,
                             std::ofstream &file) = 0;
 
   virtual float computeMin(int &i1,

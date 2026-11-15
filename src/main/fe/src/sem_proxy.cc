@@ -264,7 +264,7 @@ void SEMproxy::run()
 
     if (snapshots_opt.test(indexTimeSample)){
         auto t0 = std::chrono::steady_clock::now();
-        m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snapshot_save_binary_, snapshot_quantisation_level_, snap_file_);
+        m_solver->saveSnapshot(indexTimeSample, i1, pnGlobal, snapshot_save_binary_, snapshot_quantisation_level_, parallel_, snap_file_);
         auto t1 = std::chrono::steady_clock::now();
         snapshot_save_time += (t1 - t0);
     }

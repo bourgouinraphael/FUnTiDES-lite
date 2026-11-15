@@ -203,6 +203,11 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
        << endl;
 }
 
+template <typename INT_TYPE, typename FLOAT_TYPE>
+INT_TYPE quantise(FLOAT_TYPE value, FLOAT_TYPE min, FLOAT_TYPE max){
+    return (value - min) * ((1 << (sizeof(INT_TYPE)*8)) - 1) / (max - min);
+}
+
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE,
           bool IS_MODEL_ON_NODES>
 void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
@@ -211,39 +216,79 @@ void SEMsolverAcoustic<ORDER, INTEGRAL_TYPE, MESH_TYPE, IS_MODEL_ON_NODES>::
                  const ARRAY_REAL_VIEW &fieldGlobal,
                  bool saveBinary,
                  int quantisationLevel,
+                 const bool parallelMinMax,
                  std::ofstream &file)
 {
-  if (indexTimeStep == 0){
-      if (saveBinary){
-          char coord_data_size = sizeof(m_mesh.nodeCoord(0, 0));
-          file.write(reinterpret_cast<const char*>(&coord_data_size), sizeof(coord_data_size));
-          char pressure_data_size = sizeof(fieldGlobal(0, i1));
-          file.write(reinterpret_cast<const char*>(&pressure_data_size), sizeof(pressure_data_size));
+    if (!saveBinary){
+        if (indexTimeStep == 0){
+            file << "iteration,node_id,x,y,z,pressure\n";
+        }
+        const int numberOfNodes = m_mesh.getNumberOfNodes();
 
-      } else {
-          file << "iteration,node_id,x,y,z,pressure\n";
-      }
-  }
-
-  const int numberOfNodes = m_mesh.getNumberOfNodes();
-  for (int node = 0; node < numberOfNodes; ++node) {
-    const auto x = m_mesh.nodeCoord(node, 0);
-    const auto y = m_mesh.nodeCoord(node, 1);
-    const auto z = m_mesh.nodeCoord(node, 2);
-    const auto pressure = fieldGlobal(node, i1);
-    if (saveBinary){
-        file.write(reinterpret_cast<const char *>(&indexTimeStep), sizeof(indexTimeStep));
-        file.write(reinterpret_cast<const char *>(&x), sizeof(x));
-        file.write(reinterpret_cast<const char *>(&y), sizeof(y));
-        file.write(reinterpret_cast<const char *>(&z), sizeof(z));
-        file.write(reinterpret_cast<const char *>(&pressure), sizeof(pressure));
+        for (int node = 0; node < numberOfNodes; ++node) {
+            const auto x = m_mesh.nodeCoord(node, 0);
+            const auto y = m_mesh.nodeCoord(node, 1);
+            const auto z = m_mesh.nodeCoord(node, 2);
+            const auto pressure = fieldGlobal(node, i1);
+            file << indexTimeStep << ',' << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
+        }
     } else {
-        file << indexTimeStep << ',' << node << ',' << x << ',' << y << ',' << z << ',' << pressure << '\n';
-    }
-  }
+        const auto pressure_min = computeMin(i1, fieldGlobal, parallelMinMax);
+        const auto pressure_max = computeMax(i1, fieldGlobal, parallelMinMax);
+        const unsigned int numberOfNodes = m_mesh.getNumberOfNodes();
 
-  if (!file)
-    throw std::runtime_error("Error writing snapshot file");
+        // The binary file is in 3 parts
+        // - A header containing some info on data sizes, quantisation level, and the number of nodes
+        // - The correspondance between node index and coordinates
+        // - The measured pressures for each node at each iteration
+
+        if (indexTimeStep == 0){
+
+            // The header
+            char coord_data_size = sizeof(m_mesh.nodeCoord(0, 0));
+            char quantisationLevelChar = quantisationLevel;
+            char pressure_data_size = sizeof(fieldGlobal(0, i1));
+            if (quantisationLevel != 0){
+                pressure_data_size = quantisationLevel / 8;
+            }
+
+            file.write(reinterpret_cast<const char*>(&coord_data_size), sizeof(coord_data_size));
+            file.write(reinterpret_cast<const char*>(&pressure_data_size), sizeof(pressure_data_size));
+            file.write(reinterpret_cast<const char *>(&quantisationLevelChar), sizeof(quantisationLevelChar));
+            file.write(reinterpret_cast<const char *>(&numberOfNodes), sizeof(numberOfNodes));
+
+
+            // node index to coordinates (<node1x><node1y><node1z><node2x>...)
+            for (int node = 0; node < numberOfNodes; ++node) {
+                const auto x = m_mesh.nodeCoord(node, 0);
+                const auto y = m_mesh.nodeCoord(node, 1);
+                const auto z = m_mesh.nodeCoord(node, 2);
+                file.write(reinterpret_cast<const char *>(&x), sizeof(x));
+                file.write(reinterpret_cast<const char *>(&y), sizeof(y));
+                file.write(reinterpret_cast<const char *>(&z), sizeof(z));
+            }
+        }
+
+        // Each iteration has the form <pressure_min><pressure_max><indexTimeStep><pressureNode1><pressureNode2>...
+        file.write(reinterpret_cast<const char *>(&pressure_min), sizeof(pressure_min));
+        file.write(reinterpret_cast<const char *>(&pressure_max), sizeof(pressure_max));
+        file.write(reinterpret_cast<const char *>(&indexTimeStep), sizeof(indexTimeStep));
+        for (int node = 0; node < numberOfNodes; ++node) {
+            const auto pressure = fieldGlobal(node, i1);
+            if (quantisationLevel == 0){
+                file.write(reinterpret_cast<const char *>(&pressure), sizeof(pressure));
+            } else  if (quantisationLevel == 8) {
+                const unsigned char pressure_quantised = quantise<unsigned char, const float>(pressure, pressure_min, pressure_max);
+                file.write(reinterpret_cast<const char *>(&pressure_quantised), sizeof(pressure_quantised));
+            } else if (quantisationLevel == 16) {
+                const unsigned short int pressure_quantised = quantise<unsigned short int, const float>(pressure, pressure_min, pressure_max);
+                file.write(reinterpret_cast<const char *>(&pressure_quantised), sizeof(pressure_quantised));
+            }
+        }
+    }
+
+    if (!file)
+        throw std::runtime_error("Error writing snapshot file");
 }
 
 template <int ORDER, typename INTEGRAL_TYPE, typename MESH_TYPE, bool IS_MODEL_ON_NODES>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from snapshot_open import snapshot_to_dataframe
 import pandas as pd
 import numpy as np
 import argparse
@@ -36,16 +37,7 @@ if args.run:
     subprocess.run(f"./build/bin/semproxy {args_passed_to_sem}", shell=True)
 
 file = args.snapshot_folder + "/snapshots.csv";
-if args.binary:
-    with open(file, 'rb') as f:
-        coordinate_data_size = int.from_bytes(f.read(1))
-        pressure_data_size = int.from_bytes(f.read(1))
-    dt = np.dtype([("iteration", np.int32), ('x', np.float32), ('y', np.float32), ('z', np.float32), ("pressure", np.float32)])
-    data = np.fromfile(file, dtype=dt, offset=2) 
-    df = pd.DataFrame(data, columns=data.dtype.names)
-
-else:
-    df = pd.read_csv(file)
+df = snapshot_to_dataframe(file, args.binary)
     
 print(df)
 
